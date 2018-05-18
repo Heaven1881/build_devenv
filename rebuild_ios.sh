@@ -1,15 +1,16 @@
 #!/bin/bash
+set -eu
+#set -x
 
 ########################################################
 LIB_NAME="iconv"
-#LIB_VERSION="1.14"
-LIB_DEBUG=true
-LIB_SUFIX="LibX64D"
+
+LIB_SOURCE_DIR="libiconv-1.14"
+LIB_DEBUG=false
 
 # 编译架构，请只选择一个，将另一个注释
 #ARCHS=("i386" "armv7" "armv7s") # 32-bit
-#ARCHS=("arm64" "x86_64") # 64-bit
-ARCHS=("x86_64")
+ARCHS=("arm64" "x86_64") # 64-bit
 
 SDK_VERSION="11.3"
 ########################################################
@@ -20,21 +21,32 @@ function log_info() {
 
 if [ "$LIB_DEBUG" = true ] ; then
     LIB_ENABLE_DEBUG="--enable-debug"
+    BUILD_DIR="buildD"
 else
     LIB_ENABLE_DEBUG=""
+    BUILD_DIR="build"
 fi
 
 ROOT_DIR=$(pwd)
-BUILD_DIR="build"
-#LIPO_CMD="lipo -create -output ${BUILD_DIR}/install/lib${LIB_NAME}${LIB_SUFIX}.a "
 
 for ARCH in "${ARCHS[@]}"; do
     cd "${ROOT_DIR}" || exit
 
+    # 拷贝源代码到指定目录
+    if [ -d "${BUILD_DIR}/temp/${ARCH}" ]; then
+        rm -rf "${BUILD_DIR}/temp/${ARCH}"
+    fi
+    mkdir -p "${BUILD_DIR}/temp/${ARCH}"
+    cp -r "${LIB_SOURCE_DIR}/." "${BUILD_DIR}/temp/${ARCH}"
+
+    # 构造install目录
     if [ -d "${BUILD_DIR}/install/${ARCH}" ]; then
         rm -rf "${BUILD_DIR}/install/${ARCH}"
     fi
     mkdir -p "${BUILD_DIR}/install/${ARCH}"
+
+    # 切换到构建目录
+    cd "${BUILD_DIR}/temp/${ARCH}"
 
     if [ "$ARCH" == "i386" ] || [ "$ARCH" == "x86_64" ]; then
         PLATFORM="iPhoneSimulator"
@@ -70,8 +82,6 @@ for ARCH in "${ARCHS[@]}"; do
             make install 1>/dev/null
             if [ $? -eq 0 ]; then
                 log_info "Installed: ${LIB_NAME} ${ARCH}"
-
-                #LIPO_CMD="${LIPO_CMD} ${ROOT_DIR}/${BUILD_DIR}/install/${ARCH}/lib/lib${LIB_NAME}.a "
             else
                 log_info "Error installation ${LIB_NAME} ${ARCH}"
             fi
