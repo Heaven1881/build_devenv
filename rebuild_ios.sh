@@ -3,9 +3,8 @@ set -eu
 #set -x
 
 ########################################################
-LIB_NAME="iconv"
-
-LIB_SOURCE_DIR="libiconv-1.14"
+LIB_NAME="jemalloc"
+LIB_SOURCE_DIR="jemalloc-4.1.0"
 LIB_DEBUG=false
 
 # 编译架构，请只选择一个，将另一个注释
